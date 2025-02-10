@@ -7,6 +7,7 @@ import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
 import { DocumentData, getFirestore, QuerySnapshot } from "firebase/firestore";
 import { collection, addDoc, getDocs } from "firebase/firestore"; 
+import { DbExplorer } from './Graphstuff/Graph';
 const firebaseConfigString = import.meta.env.VITE_FIREBASE_CONFIG;
 console.log(firebaseConfigString)
 const firebaseConfig = JSON.parse(firebaseConfigString);
@@ -65,14 +66,10 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        {data&&data.map((v)=><div key={v}>{v}</div>)}
+ 
+        {/* {data&&data.map((v)=><div key={v}>{v}</div>)} */}
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <DbExplorer contextCustomer={{idk:'man'}}/>
     </>
   )
 }

@@ -1,0 +1,14 @@
+
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "@testing-library/jest-dom"]
+    "jsx": "react-jsx",   // or "react" depending on your TypeScript version
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "module": "esnext",
+    "target": "esnext",
+    "lib": ["dom", "esnext"] // ensure "dom" is included for React JSX usage  },
+  "include": ["**/*.test.ts", "**/*.test.tsx"]
+}

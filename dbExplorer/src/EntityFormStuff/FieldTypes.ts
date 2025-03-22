@@ -13,10 +13,9 @@ export interface BaseField<T extends FieldType> {
 }
 
 // Create a generic type that dynamically extends the BaseField based on the FieldType
-export type ValidField<T extends FieldType = FieldType> =
+export type ValidField<T extends FieldType> =
   T extends 'enum' ? BaseField<T> & { options: opt[] } :
   T extends 'composite' ? BaseField<T> & compositeFieldAtts :
-
   T extends 'conditionalComposite' ? BaseField<T> & { compositeObject?: boolean, options: conditionalOpt[] } :
   T extends 'list' ? BaseField<T> & { legalFieldTypes?: FieldType[] } :
   T extends 'templatedList' ? BaseField<T> & templatedListAtts :
@@ -24,6 +23,9 @@ export type ValidField<T extends FieldType = FieldType> =
 //this exists to trick the ts compiler and its circular reference complaints
 type compositeFieldAtts = { compositeObject?: boolean, children: Field[] }
 type templatedListAtts = { itemTemplates: Field[] };
+
+export type FieldInstance<T extends FieldType> =
+  ValidField<T> & { value?: FieldDefault<T> }
 
 export type opt = {
   label: string,
@@ -91,8 +93,17 @@ export const fieldField: Field[] = [
 ]
 
 export const createListField = (index: number, allowedTypes?: FieldType[]): Field => {
-  return { name: '' + index, type: 'composite', required: true, children: fieldField }
+  return { name: '' + index, type: 'composite', required: true, compositeObject: false, children: fieldField }
 }
+
+export const createTemplatedListField = (index: number, templates: Field[]): Field => {
+  return {
+    name: '' + index, type: 'conditionalComposite', required: true, compositeObject: false, options: templates.map(template => {
+      return { label: template.name, value: template.name, children: [template] }
+    })
+  }
+}
+
 
 
 export type FieldDefault<T extends FieldType> = T extends 'string' | 'longString' | 'enum'
@@ -105,6 +116,18 @@ export type FieldDefault<T extends FieldType> = T extends 'string' | 'longString
   ? boolean
   : never;
 
+export const defaultDefaults: { [key in FieldType]: any } = {
+  'string': '',
+  'longString': '',
+  'enum': '',
+  'boolean': false,
+  'composite': {},
+  'conditionalComposite': {},
+  'list': [],
+  'templatedList': [],
+  'number': 0,
+  'geolocation': { lat: 0, long: 0 },
+}
 
 // Validation rules specific to each type
 export type FieldValidation<T extends FieldType> = T extends 'string' | 'longString'

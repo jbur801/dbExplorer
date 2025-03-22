@@ -1,30 +1,30 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { createListField, Field, ValidField } from "./FieldTypes";
 
 //curries propBundle such that child fields exist as a list element on parent fields. 
-const curryPropBundleForList = (field: Field, bundle: formPropBundle, i: number): formPropBundle => {
-  const newBundle: formPropBundle = {} as formPropBundle;
+const curryPropBundleForList = (field: Field, bundle: finalBundle, i: number): initBundle => {
+  const newBundle: initBundle = {} as initBundle;
   const { formData, handleChange } = bundle;
   const subFormData = formData[field.name];
   // const subFormData = formData[selectedValue];
   newBundle.formData = subFormData[i];
   newBundle.handleChange = (fieldName: string, value: any) => {
-    // const index = parseInt(fieldName);
+    const index = parseInt(fieldName);
     const newList = [...subFormData];
-    newList[i] = value;
+    newList[index] = value;
     handleChange(field.name, newList);
   }
   return newBundle;
 }
 
 //curries propBundle such that child fields exist as a property on parent fields.
-const curryPropBundleForComposite = (field: Field, bundle: formPropBundle, children: Field[]): formPropBundle => {
-  const newBundle: formPropBundle = {} as formPropBundle;
+const curryPropBundleForComposite = (field: Field, bundle: finalBundle, children?: Field[]): initBundle => {
+  const newBundle: initBundle = {} as initBundle;
   const { formData, handleChange } = bundle;
   const selectedValue = formData[field.name];
   const subFormData = formData[selectedValue];
-  const initialValues: any = children.reduce((prev, child) => { return { ...prev, [child.name]: child.default } }, {});
-  handleChange(selectedValue, initialValues);
+  const initialValues: any = children && children.reduce((prev, child) => { return { ...prev, [child.name]: child.default } }, {});
+  initialValues ?? handleChange(selectedValue, initialValues);
   newBundle.formData = subFormData;
   newBundle.handleChange = (fieldName: string, value: any) => {
     handleChange(field.name, { ...subFormData, [fieldName]: value });
@@ -32,14 +32,24 @@ const curryPropBundleForComposite = (field: Field, bundle: formPropBundle, child
   return newBundle;
 }
 
+const getDefaultFieldSkeleton = (field: Field, innerFieldContents: React.ReactNode): React.ReactNode => {
 
-export type formPropBundle = {
+  return (<><label htmlFor={field.name} className={'block text-sm font-medium text-gray-701'}>
+    {field.label || field.name}
+  </label>
+    <div className='mt-2'>
+      {innerFieldContents}
+    </div>
+  </>)
+}
+
+export type initBundle = {
   formData: { [k: string]: any },
   handleChange: (name: string, value: any) => void,
 }
-const renderStringContents = (field: ValidField<'string'>, bundle: formPropBundle) => {
-  const { formData, handleChange } = { ...bundle };
-  return (
+const renderStringContents = (field: ValidField<'string'>, bundle: finalBundle) => {
+  const { formData, handleChange, getSkeleton } = { ...bundle };
+  return getSkeleton(field,
     <input
       className='w-full border border-gray-300 px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
 
@@ -54,9 +64,10 @@ const renderStringContents = (field: ValidField<'string'>, bundle: formPropBundl
   )
 }
 
-const renderNumberContents = (field: ValidField<'number'>, bundle: formPropBundle) => {
-  const { formData, handleChange } = { ...bundle };
-  return (
+const renderNumberContents = (field: ValidField<'number'>, bundle: finalBundle) => {
+  const { formData, handleChange, getSkeleton } = { ...bundle };
+  return getSkeleton(
+    field,
     <input
       type="number"
       name={field.name}
@@ -68,9 +79,9 @@ const renderNumberContents = (field: ValidField<'number'>, bundle: formPropBundl
   )
 }
 
-const renderBoolContents = (field: ValidField<'boolean'>, bundle: formPropBundle) => {
-  const { formData, handleChange } = { ...bundle };
-  return (
+const renderBoolContents = (field: ValidField<'boolean'>, bundle: finalBundle) => {
+  const { formData, handleChange, getSkeleton } = { ...bundle };
+  return getSkeleton(field,
     <input
       type="checkbox"
       name={field.name}
@@ -80,9 +91,9 @@ const renderBoolContents = (field: ValidField<'boolean'>, bundle: formPropBundle
     />
   )
 }
-const renderEnumContents = (field: ValidField<'enum'>, bundle: formPropBundle) => {
-  const { formData, handleChange } = { ...bundle };
-  return (
+const renderEnumContents = (field: ValidField<'enum'>, bundle: finalBundle) => {
+  const { formData, handleChange, getSkeleton } = { ...bundle };
+  return getSkeleton(field,
     <select name='field.name' id={field.name}
       value={formData[field.name] || ''} // Make it controlled by formData
       onChange={(e) => handleChange(field.name, e.target.value)} // Call handleChange on selection change
@@ -95,39 +106,51 @@ const renderEnumContents = (field: ValidField<'enum'>, bundle: formPropBundle) =
   )
 }
 
-const RenderListContents = (props: thingyProps) => {
-  const { field, bundle } = { ...props } as { field: ValidField<'list'>, bundle: formPropBundle }
+function RenderListContents(props: thingyProps) {
+  const { field, bundle } = { ...props } as { field: ValidField<'list'>, bundle: finalBundle }
 
   const [children, setChildren] = useState<Field[]>([]);
   useEffect(() => {
     bundle.handleChange(field.name, [])
-    console.log(curryPropBundleForList(field, bundle, 0));
+    // console.log(curryPropBundleForList(field, bundle, 0));
   }, [])
+
   const addField = () => {
-    bundle.handleChange(field.name, [...bundle.formData[field.name], {}]);
+    console.log('button clicked');
+    console.log(bundle.formData[field.name]);
+    // bundle.handleChange(field.name, [...bundle.formData[field.name], {}]);
     setChildren(prev => {
-      return [...prev, createListField(children.length, field.legalFieldTypes)];
+      const newList = [...prev, createListField(children.length, field.legalFieldTypes)];
+      console.log(newList);
+      return newList;
     })
   }
 
-  // {children.map(child => <FieldInput field={child} bundle={curryPropBundleForList(field, bundle)} />)}
   return (
     <>
       <button type="button" onClick={addField}>+</button>
+      {children.map((child, i) => { return <FieldInput field={child} bundle={curryPropBundleForList(field, bundle, i)} /> })}
     </>
   )
 }
 
-const renderCompositeContents = (field: ValidField<'composite'>, bundle: formPropBundle) => {
+const renderCompositeContents = (field: ValidField<'composite'>, bundle: finalBundle) => {
   const fieldCopy: ValidField<'composite'> = field;
-  return (
-    <>
-      {field.children.map((field) => <FieldInput field={field} bundle={fieldCopy.compositeObject ? curryPropBundleForComposite(field, bundle) : bundle} />)}
-    </>
+
+  useEffect(() => {
+    fieldCopy.compositeObject && bundle.handleChange(field.name, {})
+    // console.log(curryPropBundleForList(field, bundle, 0));
+  }, [])
+
+  return (bundle.getSkeleton(field,
+    <div id="collapsible" className="overflow-hidden transition-all duration-500 max-h-0">
+      {field.children.map((field) =>
+        <FieldInput field={field} bundle={fieldCopy.compositeObject ? curryPropBundleForComposite(fieldCopy, bundle, (field as ValidField<'composite'>).children) : bundle} />)}
+    </div>)
   )
 }
 
-const renderConditionalCompositeContents = (field: ValidField<'conditionalComposite'>, bundle: formPropBundle) => {
+const renderConditionalCompositeContents = (field: ValidField<'conditionalComposite'>, bundle: finalBundle) => {
   const { formData, handleChange } = { ...bundle };
   const [activeChildFields, setActiveChildFields] = useState<Field[]>([]);
   const fieldCopy: ValidField<'conditionalComposite'> = field;
@@ -146,9 +169,10 @@ const renderConditionalCompositeContents = (field: ValidField<'conditionalCompos
   }
 
   return (
+
     <>
       <select name='field.name' id={field.name}
-        value={formData[field.name] || ''} // Make it controlled by formData
+        value={bundle.fieldAccessor(field.name) || ''} // Make it controlled by formData
         onChange={curriedChangeHandler} // Call handleChange on selection change
       >
         <option value=''> Please Select</option>
@@ -156,25 +180,37 @@ const renderConditionalCompositeContents = (field: ValidField<'conditionalCompos
           return <option value={opt.value}>{opt.label}</option>
         })}
       </select>
-      {activeChildFields.map((field) => <FieldInput field={field} bundle={fieldCopy.compositeObject ? curryPropBundleForComposite(field, bundle) : bundle} />)}
+      {activeChildFields.map((field) =>
+        <FieldInput field={field} bundle={fieldCopy.compositeObject ? curryPropBundleForComposite(field, bundle, (field as ValidField<'composite'>).children!) : bundle} />)}
 
 
     </>
   )
 }
+
+export type finalBundle = initBundle & { getSkeleton: (field: Field, innerContents: ReactNode) => ReactNode };
 export type thingyProps = {
   field: Field,
-  bundle: formPropBundle,
+  bundle: initBundle
+}
+
+export type FieldProps = {
+  field: Field,
+  bundle: finalBundle,
 }
 
 export const FieldInput = (props: thingyProps) => {
-  const { field, bundle } = { ...props };
+  const { field, bundle: mainBundle } = { ...props };
+
+  const bundle = { ...mainBundle, getSkeleton: getDefaultFieldSkeleton }
+  const [initialised, setInitialised] = useState<boolean>(true);
   useEffect(() => {
-    console.log('field initialised', field.name, bundle.formData);
-  }, []);
+    console.log('field initialised', field.name, bundle.formData[field.name]);
+    setInitialised(!!bundle.formData[field.name]);
+  }, [bundle.formData]);
 
 
-  const getInnerFieldContents = (field: Field, bundle: formPropBundle) => {
+  const getInnerFieldContents = (field: Field, bundle: finalBundle) => {
     switch (field.type) {
       case 'string':
         return renderStringContents(field, bundle);
@@ -198,12 +234,14 @@ export const FieldInput = (props: thingyProps) => {
   return (
 
     <div className={'border-2px'}>
-      <label htmlFor={field.name} className={'block text-sm font-medium text-gray-700'}>
-        {field.label || field.name}
-      </label>
-      <div className='mt-1'>
-        {getInnerFieldContents(field, bundle)}
-      </div>
+      {initialised ?
+        <>{getInnerFieldContents(field, bundle)}</>
+        :
+        <div>
+          field not initialised {field.name}
+        </div>
+
+      }
     </div>
 
   )

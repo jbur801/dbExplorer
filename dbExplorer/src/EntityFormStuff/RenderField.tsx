@@ -15,7 +15,11 @@ const getDefaultFieldSkeleton = (field: Field, innerFieldContents: React.ReactNo
   </>)
 }
 
-
+export type formPropBundle = {
+  formData: { [k: string]: any },
+  handleChange: (name: string, value: any) => void,
+  fieldAccessor: (name: string) => any
+}
 //curries propBundle such that child fields exist as a list element on parent fields. 
 const curryPropBundleForList = (field: Field, bundle: formPropBundle, i: number): formPropBundle => {
   const newBundle: formPropBundle = {} as formPropBundle;
@@ -61,11 +65,7 @@ export const buildBaseFieldAccessor = (formData: { [k: string]: any }) => {
   return (name: string) => formData[name]
 }
 
-export type formPropBundle = {
-  formData: { [k: string]: any },
-  handleChange: (name: string, value: any) => void,
-  fieldAccessor: (name: string) => any
-}
+
 
 export type finalBundle = formPropBundle & {
   wrapper: (field: Field, contents: ReactNode) => ReactNode;
@@ -133,10 +133,6 @@ function RenderListContents(props: thingyProps) {
   const { field, bundle } = { ...props } as { field: ValidField<'list'>, bundle: finalBundle }
 
   const [children, setChildren] = useState<Field[]>([]);
-  // useEffect(() => {
-  //   bundle.handleChange(field.name, [])
-  //   // console.log(curryPropBundleForList(field, bundle, 0));
-  // }, [])
 
   const addField = () => {
     console.log('button clicked');

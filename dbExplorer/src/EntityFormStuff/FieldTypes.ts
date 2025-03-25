@@ -1,5 +1,5 @@
-export type FieldType = 'string' | 'number' | 'geolocation' | 'boolean' | 'longString' | 'enum' | 'composite' | 'conditionalComposite' | 'list' | 'templatedList'; // add more as needed
-export const FieldTypes: string[] = ['string', 'number', 'geolocation', 'boolean', 'longString', 'enum', 'composite', 'conditionalComposite', 'list', 'templatedList']; // add more as needed 
+export type FieldType = 'nested' | 'conditionalNested' | 'string' | 'number' | 'geolocation' | 'boolean' | 'longString' | 'enum' | 'composite' | 'conditionalComposite' | 'list' | 'templatedList'; // add more as needed
+export const FieldTypes: string[] = ['nested', 'conditionalNested', 'string', 'number', 'geolocation', 'boolean', 'longString', 'enum', 'composite', 'conditionalComposite', 'list', 'templatedList']; // add more as needed 
 // Base structure of a field
 export interface BaseField<T extends FieldType> {
   name: string;
@@ -15,13 +15,13 @@ export interface BaseField<T extends FieldType> {
 // Create a generic type that dynamically extends the BaseField based on the FieldType
 export type ValidField<T extends FieldType> =
   T extends 'enum' ? BaseField<T> & { options: opt[] } :
-  T extends 'composite' ? BaseField<T> & compositeFieldAtts :
-  T extends 'conditionalComposite' ? BaseField<T> & { compositeObject?: boolean, options: conditionalOpt[] } :
+  T extends 'composite' | 'nested' ? BaseField<T> & compositeFieldAtts :
+  T extends 'conditionalComposite' | 'nestedComposite' ? BaseField<T> & { options: conditionalOpt[] } :
   T extends 'list' ? BaseField<T> & { legalFieldTypes?: FieldType[] } :
   T extends 'templatedList' ? BaseField<T> & templatedListAtts :
   BaseField<T>;
 //this exists to trick the ts compiler and its circular reference complaints
-type compositeFieldAtts = { compositeObject?: boolean, children: Field[] }
+type compositeFieldAtts = { children: Field[] }
 type templatedListAtts = { itemTemplates: Field[] };
 
 export type FieldInstance<T extends FieldType> =
@@ -50,22 +50,35 @@ export const fieldChildrenMap: { [k: string]: Field[] } = {
   'enum': [{
     name: 'options', type: 'templatedList', required: true, itemTemplates:
       [{
-        name: 'opt', type: 'composite', compositeObject: true, children: [
+        name: 'opt', type: 'composite', children: [
           { name: 'label', type: 'string', required: true },
           { name: 'value', type: 'string', required: true }
         ]
       }]
   }],
-  'composite': [
-    { name: 'compositeObject', type: 'boolean', default: false },
+  'nested': [
     { name: 'children', type: 'list' }
   ],
-  'conditionalComposite': [
-    { name: 'compositeObject', type: 'boolean', default: false },
+  'conditionalNested': [
     {
       name: 'options', type: 'templatedList', itemTemplates:
         [{
-          name: 'opt', type: 'composite', compositeObject: true, children: [
+          name: 'opt', type: 'composite', children: [
+            { name: 'label', type: 'string', required: true },
+            { name: 'value', type: 'string', required: true },
+            { name: 'children', type: 'list' },
+          ]
+        }]
+    }],
+
+  'composite': [
+    { name: 'children', type: 'list' }
+  ],
+  'conditionalComposite': [
+    {
+      name: 'options', type: 'templatedList', itemTemplates:
+        [{
+          name: 'opt', type: 'composite', children: [
             { name: 'label', type: 'string', required: true },
             { name: 'value', type: 'string', required: true },
             { name: 'children', type: 'list' },
@@ -93,12 +106,12 @@ export const fieldField: Field[] = [
 ]
 
 export const createListField = (index: number, allowedTypes?: FieldType[]): Field => {
-  return { name: '' + index, type: 'composite', required: true, compositeObject: false, children: fieldField }
+  return { name: '' + index, type: 'nested', required: true, children: fieldField }
 }
 
 export const createTemplatedListField = (index: number, templates: Field[]): Field => {
   return {
-    name: '' + index, type: 'conditionalComposite', required: true, compositeObject: false, options: templates.map(template => {
+    name: '' + index, type: 'conditionalComposite', required: true, options: templates.map(template => {
       return { label: template.name, value: template.name, children: [template] }
     })
   }
@@ -121,8 +134,10 @@ export const defaultDefaults: { [key in FieldType]: any } = {
   'longString': '',
   'enum': '',
   'boolean': false,
-  'composite': {},
-  'conditionalComposite': {},
+  'composite': '',
+  'conditionalComposite': '',
+  'nested': {},
+  'conditionalNested': {},
   'list': [],
   'templatedList': [],
   'number': 0,

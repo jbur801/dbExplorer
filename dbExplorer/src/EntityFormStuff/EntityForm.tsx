@@ -1,7 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { BaseField, ValidField, FieldType, Field } from './FieldTypes'
 import { FieldInput } from './FieldInput';
-import { buildBaseFieldAccessor, RenderField } from './RenderField';
+import { RenderField } from './PathRenderField';
 
 
 // Other field types (like nested objects) can be added similarl
@@ -31,6 +31,9 @@ export const EntityForm = (props: FormProps) => {
   //   return initialValues;
   // });
 
+  useEffect(() => {
+    console.log('formData Changed', formData);
+  }, [formData]);
   const handleChange = (name: string, value: any) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -39,11 +42,11 @@ export const EntityForm = (props: FormProps) => {
     e.preventDefault();
     onSubmit(formData);
   };
-  const fieldAccessor = useCallback(buildBaseFieldAccessor(formData), [formData]);
+  // const fieldAccessor = useCallback(buildBaseFieldAccessor(formData), [formData]);
   return (
     <div className='bg-white py-8 px-6 shadow rounded-lg sm:px-10'>
       <form className={'mb-0 space-y-6'} onSubmit={handleSubmit}>
-        {fields.map((field) => <RenderField field={field} bundle={{ formData, handleChange, fieldAccessor: fieldAccessor }} />)}
+        {fields.map((field) => <RenderField field={field} bundle={{ formData, setFormData, fieldPath: [] }} />)}
         <button type="submit">Submit</button>
       </form>
     </div>

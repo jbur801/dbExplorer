@@ -1,6 +1,4 @@
-
-import React, { useState } from 'react';
-import { BaseField, ValidField, FieldType, Field } from './FieldTypes'
+import { Field } from './FieldTypes'
 
 export type ynm = 'yes' | 'no' | 'maybe'
 export type ButtonSpec = {

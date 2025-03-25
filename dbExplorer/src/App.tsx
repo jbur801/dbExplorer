@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react'
 import { v4 } from 'uuid';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
-import { DocumentData, getFirestore, QuerySnapshot } from "firebase/firestore";
-import { collection, addDoc, getDocs } from "firebase/firestore";
-import { DbExplorer } from './Graphstuff/Graph';
+import { addDoc, collection, getDocs, getFirestore } from "firebase/firestore";
+import { ButtonSpec } from './EntityFormStuff/ButtonList';
 import { EntityForm } from './EntityFormStuff/EntityForm';
-import { BaseField, FieldType, makeOptsFromStrings, Field, FieldTypes, fieldChildrenMap } from './EntityFormStuff/FieldTypes';
-import { ButtonList, ButtonSpec } from './EntityFormStuff/ButtonList';
+import { Field, fieldChildrenMap, FieldTypes } from './EntityFormStuff/FieldTypes';
 const firebaseConfigString = import.meta.env.VITE_FIREBASE_CONFIG;
 console.log(firebaseConfigString)
 const firebaseConfig = JSON.parse(firebaseConfigString);
@@ -20,7 +15,6 @@ const firebaseConfig = JSON.parse(firebaseConfigString);
 
 
 
-const moodEnum: string[] = ['happy', 'sad', 'mad',]
 const test: Field[] = [
   { name: 'name', label: 'Name', type: 'string', validation: undefined, required: true },
   { name: 'label', label: 'Label', type: 'string', required: false },
